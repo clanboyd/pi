@@ -12,8 +12,11 @@ int main()
     }
 
     pthread_t GreenThread;
-    pthread_create(&GreenThread, NULL, Controls::ReadEntry, myControls); 
+    pthread_t RedButtonThread;
+    pthread_create(&GreenThread, NULL, Controls::ReadCard, myControls); 
+    pthread_create(&RedButtonThread, NULL, Controls::CheckRedButton, myControls); 
     pthread_join(GreenThread,NULL);
+    pthread_join(RedButtonThread,NULL);
 
     myControls->DeInit();
     delete myControls;

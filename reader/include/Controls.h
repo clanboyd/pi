@@ -2,6 +2,7 @@
 #define CONTROLS_H
 
 #include "Definitions.h"
+#include "Lcd.h"
 
 class Controls
 {
@@ -14,14 +15,19 @@ class Controls
    
     bool Init(); 
     void DeInit(); 
-    static void* ReadEntry(void* obj);
-    void Read(); 
+    static void* ReadCard(void* obj);
+    void ReadCard(); 
+    static void* CheckRedButton(void* obj);
+    void CheckRedButton(); 
+    static void* GreenLedBlink(void* obj);
+    void GreenLedBlink(); 
     void ShowId(); 
 
 protected:
 
 private:
     MySerial *mSerPointer;
+    Lcd *mLcd;
     std::string mId;
 };
 

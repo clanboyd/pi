@@ -31,35 +31,75 @@ bool Controls::Init()
     //  Set Red button OFF
     bcm2835_gpio_write(PIN_RED_LIGHT, LOW);
 
+    mLcd = new Lcd();
+    mLcd->Init();
+    mLcd->SendData((char*)"hello world!");
+
     return true;
 }
 
 void Controls::DeInit()
 {
     bcm2835_close();
+    delete mLcd;
 }
 
-void* Controls::ReadEntry(void* obj)
+void* Controls::ReadCard(void* obj)
 {
-    ((Controls *) obj)->Read();
+    ((Controls *) obj)->ReadCard();
     return obj;
 }
 
-void Controls::Read()
+void Controls::ReadCard()
 {
+    pthread_t GreenLedBlink;
     uint8_t value = 0;
     std::string str;
+    bool secondRead=true;
     while (1)
     {
+        secondRead=true;
         // Read some data
         value = bcm2835_gpio_lev(PIN_GREEN_BUTTON);
         if ( 0 == value )
         {
-            bcm2835_gpio_write(PIN_RED_LIGHT, LOW);
             bcm2835_gpio_write(PIN_GREEN_LIGHT, HIGH);
-       	    mSerPointer->Read(mId);
-            ShowId();
+       	    if ( true == mSerPointer->Read(mId) )
+            {
+                ShowId();
+                pthread_create(&GreenLedBlink, NULL, Controls::GreenLedBlink, this);
+                while (secondRead == true )
+                {
+       	            if ( true == mSerPointer->Read(mId) )
+                    {
+                        ShowId();
+                        secondRead=false;
+                    }
+                }
+                pthread_cancel(GreenLedBlink);
+            }
             bcm2835_gpio_write(PIN_GREEN_LIGHT, LOW);
+        }
+        // wait a bit
+        delay(500);
+    }
+};
+
+void* Controls::CheckRedButton(void* obj)
+{
+    ((Controls *) obj)->CheckRedButton();
+    return obj;
+}
+
+void Controls::CheckRedButton()
+{
+    uint8_t value = 0;
+    while (1)
+    {
+        // Read some data
+        value = bcm2835_gpio_lev(PIN_RED_BUTTON);
+        if ( 0 == value )
+        {
             bcm2835_gpio_write(PIN_RED_LIGHT, HIGH);
         }
         // wait a bit
@@ -67,6 +107,22 @@ void Controls::Read()
     }
 };
 
+void* Controls::GreenLedBlink(void* obj)
+{
+    ((Controls *) obj)->GreenLedBlink();
+    return obj;
+}
+
+void Controls::GreenLedBlink()
+{
+    while (1)
+    {
+        delay(500);
+        bcm2835_gpio_write(PIN_GREEN_LIGHT, HIGH);
+        delay(500);
+        bcm2835_gpio_write(PIN_GREEN_LIGHT, LOW);
+    }
+};
 void Controls::ShowId()
 {
     std::cout<<mId<<std::endl;
